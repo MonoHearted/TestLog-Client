@@ -23,15 +23,25 @@ class CaptureSysResource(object):
         return psutil.disk_io_counters()
 
     async def getSysResourceUsage(self):
+        ioStats = psutil.disk_io_counters()
         (readCountPre, writeCoutPre,
-         readBytesPre, writeBytesPre,
-         _, _) = psutil.disk_io_counters()
+         readBytesPre, writeBytesPre) = (
+            ioStats.read_count,
+            ioStats.write_count,
+            ioStats.read_bytes,
+            ioStats.write_bytes
+        )
         await self.getPerCPUPercent()
         CPUPercent = await self.getCPUPercent()
         perCPUPercent = await self.getPerCPUPercent()
+        ioStats = psutil.disk_io_counters()
         (readCount, writeCout,
-         readBytes, writeBytes,
-         _, _) = psutil.disk_io_counters()
+         readBytes, writeBytes) = (
+            ioStats.read_count,
+            ioStats.write_count,
+            ioStats.read_bytes,
+            ioStats.write_bytes
+        )
         (readCount, writeCout, readBytes, writeBytes) = (
             readCount - readCountPre,
             writeCout - writeCoutPre,

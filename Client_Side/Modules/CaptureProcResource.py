@@ -16,7 +16,7 @@ class CaptureProcResource(object):
         self._currentProcPid=os.getpid()
         logger.info("This process's pid is %d\n\n\n" % self._currentProcPid)
         if (pid is not None):
-            self.initProcessObjectWithPid(self._pid)
+            self.initProcessObjectWithPid()
         else:
             self.initProcessObjectWithPname(self._pName)
 
@@ -28,18 +28,17 @@ class CaptureProcResource(object):
         for proc in self._processes:
             logger.info(proc.info)
 
-    def initProcessObjectWithPid(self, pid):
+    def initProcessObjectWithPid(self):
         """
         Pid is provided. Two cases need to handle
         1. Pname provide, attach one process or throw NoSuchProcess
         2. Pname not provide, attach one process
-        :param pid:
         :return:
         """
         attrList = ['pid', 'name']
         for proc in process_iter(attrs=attrList):
             # logger.debug(proc.info)
-            if (proc.info['pid'] is self._pid):
+            if (proc.info['pid'] == self._pid):
                 if (self._pName and self._pName in ' '.join(
                         proc.cmdline()).lower()):
                     # Pid and Pname are both provided
@@ -71,17 +70,34 @@ class CaptureProcResource(object):
         if (len(self._processes) < 1):
             raise NoSuchProcess(pid=self._pid, name=self._pName)
 
-    def getProcessesStats(self, aggregate=False):
+    def getProcessesStats(self, aggregate):
         logger.debug("enter")
         retDict = dict()
 
-        if (aggregate):
-            key = "%s CPU USED PERCENTAGE" % self._pName
-            retDict[key] = 0
+        if aggregate:
             for proc in self._processes:
                 try:
                     with proc.oneshot():
+                        key = "%s CPU USED PERCENTAGE" % self._pName
+                        if key not in retDict:
+                            retDict[key] = 0
                         retDict[key] += proc.cpu_percent()
+
+                        if ('Linux' in self._OSPlatform):
+                            key = "%s FILE DESCRIPTORS OPENED" % self._pName
+                            if key not in retDict:
+                                retDict[key] = 0
+                            retDict[key] = proc.num_fds()
+                        else:
+                            key = "%s %d HANDLES USED" % self._pName
+                            if key not in retDict:
+                                retDict[key] = 0
+                            retDict[key] += proc.num_handles()
+
+                        key = "%s THREADS USED" % self._pName
+                        if key not in retDict:
+                            retDict[key] = 0
+                        retDict[key] += proc.num_threads()
                 except NoSuchProcess:
                     pass
         else:

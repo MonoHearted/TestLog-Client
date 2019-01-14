@@ -1,6 +1,6 @@
 import configparser
 import logging
-from configparser import NoOptionError
+from pathlib import Path
 
 from .Logging import setLogger
 
@@ -34,8 +34,15 @@ def cfgParser(argParser):
                 red from cmdline and config file
              the root logger
     """
+    # get local logger
+    logger = logging.getLogger(__name__)
+
     # Load the configuration file
     config = configparser.RawConfigParser(allow_no_value=True)
+    if argParser.configFile is None:
+        logger.info('No config provided, generating default')
+        defaultPath = Path('config/logman.ini')
+        argParser.configFile = defaultPath
     config.read(argParser.configFile)
 
     # Setup root logger
@@ -56,90 +63,56 @@ def cfgParser(argParser):
                            config['logging']['level'],
                            config['logging']['logfile_path'],
                            int(config['logging']['max_log_file_size_mb']))
-    # get local logger
-    logger = logging.getLogger(__name__)
 
     # setup config for other arguments
     logger.info("Parsing configuration")
 
-    """
-    Validate other options in config file
-    Including Mandatory and Optional Opts   
-    """
-    # validate mandatory options
-    mandatoryOpts = [('cassandra', 'hosts'), ('elasticsearch', 'hosts'),
-                     ('metadata', 'template_cr'), ('metadata', 'template_sr')
-                     ]
-
-    def validateMandatoryOpts(sectionOpt):
-        retOpt = config.get(sectionOpt[0], sectionOpt[1], fallback=None)
-        if (retOpt is None or ''):
-            raise NoOptionError(sectionOpt[1], sectionOpt[0])
-
-    for opt in mandatoryOpts:
-        validateMandatoryOpts(opt)
-
-    """
-    Endtime is not mandatory in cmdline argument
-    thus, check cmdline and config file, setting it in either way is fine
-    """
-    if (argParser.endTime is not None):
-        # if set in cmdline
-        config.set('metadata', 'endtime', argParser.endTime)
+    # commandline argument overwrites
+    if argParser.pid is not None or argParser.procName is not None:
+        if argParser.pid is not None:
+            config.set('proc_info', 'pid', argParser.pid)
+        if argParser.procName is not None:
+            config.set('proc_info', 'process_name', argParser.procName)
     else:
-        """
-        if not set in cmdline
-        if not set in config file or set in config file, but it's empty
-        """
-        if (config.get('metadata', 'endtime', fallback=None) is None or
-                config.get('metadata', 'endtime', fallback=None) is ''):
-            raise Exception("Neither in cmdline nor config file, "
-                            "[metadata][endtime] is set")
-        # check whether it is a int
-        try:
-            int(config.get('metadata', 'endtime'))
-        except ValueError:
-            raise ValueError("endtime must be "
-                             "an epoch timestamp in millisecond")
+        # if neither are provided in command line
+        # check validity and if exists in config
+        if config.get('proc_info', 'pid', fallback='') is not '':
+            try:
+                int(config.get('proc_info', 'pid'))
+            except ValueError:
+                raise ValueError('PID must be an integer')
+        elif config.get('proc_info', 'process_name', fallback=None) is None:
+            raise Exception('pid&process name are not defined in neither arguments nor config.')
 
-    """
-    Same situation for keys
-    Check both cmdline and config file
-    """
-    if (argParser.keys is not None):
-        config.set('metadata', 'keys', argParser.endTime)
-    else:
-        if (config.get('metadata', 'keys', fallback=None) is None or
-                config.get('metadata', 'keys', fallback=None) is ''):
-            raise Exception("Neither in cmdline nor config file, "
-                            "[metadata][keys] is set")
-        # check whether it is a int
-        try:
-            int(config.get('metadata', 'keys'))
-        except ValueError:
-            raise ValueError("keys must be an integer")
+    # set default values for optionals in config
+    defaultOptionalValues = {
+        "proc_info": {
+            "aggregate_data": 'False',
+            "is_java_process": 'True'
+        },
+        "system_info": {
+            "per_disk": 'False',
+            "per_nic": 'False'
+        },
+        "data": {
+            "unit": "BYTES",
+            "average": 'False'
+        },
+        "workers": {
+            "pool": '4'
+        }
+    }
+    for section, opts in defaultOptionalValues.items():
+        for option, value in opts.items():
+            configValue = config.get(section, option, fallback=None)
+            if configValue is None or configValue is '':
+                config.set(section, option, value)
 
-    """
-    Version has default value, set it to elasticsearch section
-    Datatype has default value, set it to metadata section
-    """
-    config.set('elasticsearch', 'version', argParser.version)
-    config.set('metadata', 'datatype', argParser.dataType)
-
-    # setting up config for optional options but with default value
-
-    # default set to 1000ms, 1s
-    defaultInterval = "1000"
-    defaultWorkerPoolSize = "4"
-    if (config.get('metadata', 'interval', fallback=defaultInterval) is ''):
-        config.set('metadata', 'interval', defaultInterval)
-
-    if (config.get('workers', 'pool', fallback=defaultWorkerPoolSize) is ''):
-        config.set('workers', 'pool', defaultWorkerPoolSize)
-
-    # Printout all the sections and properties red from config file
+    # Printout all the sections and properties read from config file
     for section in config.sections():
         logger.debug("%s:" % section)
         for key in config[section].keys():
             logger.debug("\t%s = %s" % (key, config[section][key]))
+
     return rootlogger, config
+

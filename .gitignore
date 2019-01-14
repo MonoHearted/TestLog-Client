@@ -3,3 +3,4 @@ logs/*
 Client_Side/logs/*
 Server_Side/logs/*
 *.pyc
+Server_Side/nglogman/migrations/*

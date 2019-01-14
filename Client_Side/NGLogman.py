@@ -5,10 +5,22 @@
 # This is a client side script running with DUT in the same
 # machine.
 #
+# Todo:
+# Run it in a sever mode, restful web server
+# or a gRPC server(Preferred),
+# Create thread pool for CaptureSysResource and
+# CaptureProcResource
+#
+# instantiate a CaptureSysResource obj and
+# a CaptureProcResource obj for each request
+#
+# instantiate a Retention manager obj to purge data older
+# than a specific age
+#
 # Maintainer: Ivor
 ###########################################################
+
 import argparse
-import asyncio
 import sys
 import time
 
@@ -18,9 +30,11 @@ from Modules.Logging import setLogger
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Capture Respurce Usage')
     parser.add_argument("-pn", "--process-name", dest="procName", type=str,
-                        required=True, help="provide process name")
+                        default=None,
+                        required=False, help="provide process name")
 
     parser.add_argument("-pid", "--process-id", dest="pid", type=int,
+                        default=None,
                         required=False, help='specify a end time')
 
     parser.add_argument("interval", type=int,
@@ -33,35 +47,24 @@ def parse_arguments():
     return args
 
 
-async def metadata_populate():
+def main():
     args = parse_arguments()
-    _format='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s'
-    level='DEBUG'
+    _format = '%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s'
+    level = 'DEBUG'
     logger = setLogger(_format, level, 'logs', 20)
     logger.info("Start to run %s" % sys.argv)
-    from Modules.CaptureSysResource import CaptureSysResource
-    CSR=CaptureSysResource(args.interval)
-    # Task1=asyncio.create_task(CSR.getCPUPercent())
-    # Task2=asyncio.create_task(CSR.getPerCPUPercent())
-    logger.info(time.time())
-    # logger.info(await asyncio.gather(Task1,Task2))
-    # # logger.info(time.time())
-    # from concurrent import futures
-    # with futures.ProcessPoolExecutor(max_workers=4) as executor:
-    #     logger.info(time.time())
-    #     task1=executor.submit(CSR.getCPUPercent())
-    #     task2=executor.submit(CSR.getPerCPUPercent())
-    #     futures.as_completed([task1,task2])
-    #     logger.info(time.time())
+
     import math
+    numItr = int(math.ceil(args.duration / args.interval))
+    from Modules.TaskManager import createTask
+    from concurrent.futures import ThreadPoolExecutor
+    executor = ThreadPoolExecutor(max_workers=3)
+    createTask(numItr, 'KB', args.interval, procName=args.procName,
+               pid=args.pid,
+               executor=executor)
 
-    numItr=math.ceil(args.duration / args.interval)
-    for _ in range(numItr):
-        result=await CSR.getSysResourceUsage()
-        logger.info(result)
     logger.info(time.time())
-
 
 
 if __name__ == '__main__':
-    asyncio.run(metadata_populate())
+    main()

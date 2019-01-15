@@ -7,11 +7,15 @@ class LGNode(models.Model):
     """
     hostname = models.CharField(max_length=200)
     ip = models.GenericIPAddressField()
-    comments = models.TextField()
-    nodeUUID = models.UUIDField(primary_key=True,null=False,editable=True)
+    comments = models.TextField(default='')
+    nodeUUID = models.UUIDField(primary_key=True,default=uuid.uuid4(),null=False,editable=True)
 
     def __str__(self):
         return self.hostname
+
+    class Meta:
+        verbose_name = 'Logging Node'
+        verbose_name_plural = 'Logging Nodes'
 
 
 class Task(models.Model):

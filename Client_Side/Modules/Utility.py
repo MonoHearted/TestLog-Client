@@ -63,6 +63,10 @@ class singletonThreadPool(metaclass=Singleton):
     """
     Create a singleton class which wrap a threadpool object
     """
-    def __init__(self, max_workers):
+    def __init__(self, max_workers=None):
         print("Creating thread pool")
         self.__pool = ThreadPoolExecutor(max_workers)
+
+    @property
+    def pool(self):
+        return self.__pool

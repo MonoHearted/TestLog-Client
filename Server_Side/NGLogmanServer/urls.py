@@ -20,3 +20,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('nglogman.urls'))
 ]
+
+
+# call config and logging module here
+
+# add gRPC server start point here
+

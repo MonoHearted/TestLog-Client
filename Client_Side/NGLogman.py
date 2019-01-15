@@ -61,8 +61,8 @@ def main():
     import math
     numItr = int(math.ceil(args.duration / args.interval))
     from .Modules.TaskManager import createTask
-    from concurrent.futures import ThreadPoolExecutor
-    executor = ThreadPoolExecutor(max_workers=config.getint('workers','pool'))
+    from .Modules.Utility import singletonThreadPool
+    executor = singletonThreadPool(max_workers=config.getint('workers','pool'))
     createTask(numItr, args.interval, config, datetime.datetime.now().isoformat(), executor=executor)
 
     logger.info(time.time())

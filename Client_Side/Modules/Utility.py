@@ -1,5 +1,6 @@
 from __future__ import division
 import logging
+from concurrent.futures.thread import ThreadPoolExecutor
 from functools import wraps
 
 logger = logging.getLogger(__name__)
@@ -43,3 +44,29 @@ def convertBytesTo(unit):
         return funcWrapper
 
     return setUnitDecorator
+
+
+class Singleton(type):
+    def __init__(self, *args, **kwargs):
+        self.__instance = None
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        if self.__instance is None:
+            self.__instance = super().__call__(*args, **kwargs)
+            return self.__instance
+        else:
+            return self.__instance
+
+
+class singletonThreadPool(metaclass=Singleton):
+    """
+    Create a singleton class which wrap a threadpool object
+    """
+    def __init__(self, max_workers=None):
+        print("Creating thread pool")
+        self.__pool = ThreadPoolExecutor(max_workers)
+
+    @property
+    def pool(self):
+        return self.__pool

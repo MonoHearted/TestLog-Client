@@ -7,9 +7,6 @@ verify_ssl = true
 
 [packages]
 django = ">2.*"
-sqlite3 = "*"
-sqlite = "*"
-pysqlite2 = "*"
 
 [requires]
 python_version = "3.7"

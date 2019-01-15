@@ -23,7 +23,7 @@ class Task(models.Model):
     createTime = models.DateTimeField(auto_now=True)
     startTime = models.DateTimeField(null=False)
     duration = models.DurationField(null=False)
-    itr = models.PositiveSmallIntegerField(default=4)
+    interval = models.PositiveSmallIntegerField(default=4)
     taskUUID=models.UUIDField(primary_key=True,
                               default=uuid.uuid4,
                               editable=False)

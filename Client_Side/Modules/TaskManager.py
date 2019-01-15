@@ -4,7 +4,7 @@ import pandas as pd
 from pandas import DataFrame as df
 from concurrent.futures import as_completed
 import os,sys
-from Modules.Utility import convertBytesTo
+from Client_Side.Modules.Utility import convertBytesTo
 
 logger = logging.getLogger(__name__)
 
@@ -14,15 +14,15 @@ def createTask(Itr, Interval, config, startTime, executor=None):
     pid = config['proc_info'].get('pid')
 
     logger.info("Starting Task @ {}".format(time.time()))
-    from Modules.CaptureSysResource import CaptureSysResource
+    from Client_Side.Modules.CaptureSysResource import CaptureSysResource
     CSR = CaptureSysResource(Interval)
 
-    from Modules.CaptureProcResource import CaptureProcResource
+    from Client_Side.Modules.CaptureProcResource import CaptureProcResource
     CPR = CaptureProcResource(pid, procName)
 
     CJR = None
     if config.getboolean('proc_info', 'is_java_process'):
-        from Modules.CaptureJVMResource import CaptureJVMResource
+        from Client_Side.Modules.CaptureJVMResource import CaptureJVMResource
         # todo
         # read the JAVA_HOME from config file and pass it to CaptureJVMResource
         # constructor

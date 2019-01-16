@@ -26,9 +26,15 @@ def createTask(Itr, Interval, config, startTime, executor=None):
         # todo
         # read the JAVA_HOME from config file and pass it to CaptureJVMResource
         # constructor
+        if(config.get('proc_info','java_home', fallback=None) is None or
+                config.get('proc_info', 'java_home', fallback=None) is ''
+            ):
+            raise ValueError("Invalid value for java_home")
+
         if (len(CPR.processes) == 1):
             javaPid = CPR.processes[0].info['pid']
-            CJR = CaptureJVMResource("/usr/java/latest/", Interval, javaPid)
+            CJR = CaptureJVMResource(config.get('proc_info','java_home'),
+                                     Interval, javaPid)
         else:
             logger.error("More than one Java process found")
             sys.exit(1)

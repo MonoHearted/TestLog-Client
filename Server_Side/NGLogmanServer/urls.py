@@ -32,7 +32,7 @@ urlpatterns = [
 
 # add gRPC server start point here
 if 'runserver' in sys.argv:
-    server = grpc.server(singletonThreadPool(max_workers=10).pool)
+    server = grpc.server(singletonThreadPool(max_workers=10))
     addToServer(server)
     server.add_insecure_port('[::]:50051')
     server.start()

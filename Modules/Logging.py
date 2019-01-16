@@ -5,6 +5,7 @@
 # ------------------------------------------------------
 import logging, logging.handlers, logging.config
 import time
+import os
 from logging.handlers import RotatingFileHandler
 
 
@@ -24,6 +25,10 @@ def setLogger(format, level, path, rotateSize):
         assert type(format) is str, "Provided log format is not a string"
         assert True, "Fail to use logging format %s" % format
         raise ex
+
+    # check if logging folder exists & create
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     # set log level and logging messages format
     numeric_level = getattr(logging, level.upper(), None)

@@ -25,7 +25,7 @@ import sys
 import datetime
 import time
 
-from .Modules.ConfigParser import cfgParser
+from Modules.ConfigParser import cfgParser
 
 
 def parse_arguments():
@@ -60,8 +60,8 @@ def main():
 
     import math
     numItr = int(math.ceil(args.duration / args.interval))
-    from .Modules.TaskManager import createTask
-    from .Modules.Utility import singletonThreadPool
+    from Modules.TaskManager import createTask
+    from Modules.Utility import singletonThreadPool
     executor = singletonThreadPool(max_workers=config.getint('workers','pool'))
     createTask(numItr, args.interval, config, datetime.datetime.now().isoformat(), executor=executor)
 

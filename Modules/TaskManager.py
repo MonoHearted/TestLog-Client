@@ -23,9 +23,6 @@ def createTask(Itr, Interval, config, startTime, executor=None):
     CJR = None
     if config.getboolean('proc_info', 'is_java_process'):
         from Modules.CaptureJVMResource import CaptureJVMResource
-        # todo
-        # read the JAVA_HOME from config file and pass it to CaptureJVMResource
-        # constructor
         if(config.get('proc_info','java_home', fallback=None) is None or
                 config.get('proc_info', 'java_home', fallback=None) is ''
             ):

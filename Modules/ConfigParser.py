@@ -23,8 +23,7 @@ def setSectionForConfigParser(section, configSection, config):
             config.set(section, key,
                        config[section].get(key, configSection[key]))
 
-
-def cfgParser(argParser):
+def cfgParser(argParser, parseGRPCOnly=False):
     """
     load config file passed by cmdline arguments
     argument from cmdline will override
@@ -67,6 +66,30 @@ def cfgParser(argParser):
     # setup config for other arguments
     logger.info("Parsing configuration")
 
+    if parseGRPCOnly:
+        # commandline argument overwrites
+        if argParser.address is not None:
+            address = argParser.address.split(':')
+            config.set('grpc', 'server_ip', address[0])
+            config.set('grpc', 'server_port', address[1])
+
+        # validate mandatory options
+        mandatoryOpts = [('grpc', 'server_ip'), ('grpc', 'server_port')]
+
+        def validateMandatoryOpts(sectionOpt):
+            retOpt = config.get(sectionOpt[0], sectionOpt[1], fallback=None)
+            if (retOpt is None or ''):
+                raise configparser.NoOptionError(sectionOpt[1], sectionOpt[0])
+
+        for opt in mandatoryOpts:
+            validateMandatoryOpts(opt)
+
+        # set default host port
+        if config.get('grpc', 'host_port', fallback='') is '':
+            config.set('grpc', 'host_port', '50051')
+
+        return rootlogger, config
+
     # commandline argument overwrites
     if argParser.pid is not None or argParser.procName is not None:
         if argParser.pid is not None:
@@ -89,6 +112,9 @@ def cfgParser(argParser):
         "proc_info": {
             "aggregate_data": 'False',
             "is_java_process": 'True'
+        },
+        "grpc": {
+            "host_port": "50051"
         },
         "system_info": {
             "per_disk": 'False',

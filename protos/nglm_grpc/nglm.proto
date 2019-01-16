@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package nglm_grpc;
 
-service Client {
+service Server {
 	rpc register(clientInfo) returns (response) {}
 }
 

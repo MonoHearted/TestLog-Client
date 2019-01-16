@@ -22,18 +22,20 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
-def registerClient(address):
+def registerClient(address, hostingPort):
     channel = grpc.insecure_channel(address)
 
     stub = nglm_pb2_grpc.ServerStub(channel)
     hostName = socket.gethostname()
     hostIPv4 = socket.gethostbyname(hostName)
 
-    clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4)
+    clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4, port=hostingPort)
     response = stub.register(clientInfo)
 
     if not response.success:
         raise RuntimeError('Failed to register client.')
+
+    channel.close()
 
 
 @contextmanager
@@ -52,9 +54,9 @@ if __name__ == '__main__':
     logger, config = cfgParser(args, parseGRPCOnly=True)
 
     serverAddress = config.get('grpc', 'server_ip') + ':' + config.get('grpc', 'server_port')
-    registerClient(serverAddress)
-
     hostPort = config.get('grpc', 'host_port')
+
+    registerClient(serverAddress, int(hostPort))
     with createServer(hostPort):
         print('gRPC Server now listening on port ' + hostPort)
         try:

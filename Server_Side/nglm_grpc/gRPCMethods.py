@@ -1,6 +1,7 @@
-import nglm_grpc.nglm_pb2 as nglm_pb2
-import nglm_grpc.nglm_pb2_grpc as nglm_pb2_grpc
-from nglogman.models import LGNode, Task
+from . import nglm_pb2
+from . import nglm_pb2_grpc
+from nglogman.models import LGNode
+
 
 class ClientServicer(nglm_pb2_grpc.ClientServicer):
     def register(self, request, context):

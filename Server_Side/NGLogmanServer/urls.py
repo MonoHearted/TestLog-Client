@@ -13,11 +13,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-import grpc
-from concurrent import futures
-from Client_Side.Modules.Utility import singletonThreadPool
-from nglm_grpc.methods import addToServer
-
 from django.contrib import admin
 from django.urls import path, include
 import sys
@@ -32,6 +27,11 @@ urlpatterns = [
 
 # add gRPC server start point here
 if 'runserver' in sys.argv:
+    import grpc
+
+    from Server_Side.nglm_grpc.modules.Utility import singletonThreadPool
+    from Server_Side.nglm_grpc.gRPCMethods import addToServer
+
     server = grpc.server(singletonThreadPool(max_workers=10))
     addToServer(server)
     server.add_insecure_port('[::]:50051')

@@ -11,6 +11,8 @@ from nglm_grpc.gRPCMethods import addToServer
 from Modules.Utility import singletonThreadPool
 from Modules.ConfigParser import cfgParser
 
+from grpc._channel import _Rendezvous
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Establish NGLM gRPC Client-side')
     parser.add_argument("-c", "--config", dest="configFile", type=str,
@@ -30,17 +32,25 @@ def registerClient(address, hostingPort):
     hostIPv4 = socket.gethostbyname(hostName)
 
     clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4, port=hostingPort)
-    response = stub.register(clientInfo)
+    try:
+        response = stub.register(clientInfo)
 
-    if not response.success:
-        raise RuntimeError('Failed to register client.')
+        if not response.success:
+            # server side register raised exception
+            raise RuntimeError('Failed to register client.')
+        logger.info('Connected to ' + address)
+    except _Rendezvous:
+        logger.error('Failed to connect. Retrying in 5s...')
+        time.sleep(5)
+        registerClient(address, hostingPort)
 
     channel.close()
 
 
 @contextmanager
 def createServer(port):
-    server = grpc.server(singletonThreadPool(max_workers=10))
+    from concurrent import futures
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
 
     addToServer(server)
     server.add_insecure_port('[::]:' + port)
@@ -58,7 +68,7 @@ if __name__ == '__main__':
 
     registerClient(serverAddress, int(hostPort))
     with createServer(hostPort):
-        print('gRPC Server now listening on port ' + hostPort)
+        logger.info('gRPC Server now listening on port ' + hostPort)
         try:
             while True:
                 time.sleep(86400)

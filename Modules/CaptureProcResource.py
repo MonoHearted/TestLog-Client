@@ -89,7 +89,7 @@ class CaptureProcResource(object):
                                 retDict[key] = 0
                             retDict[key] = proc.num_fds()
                         else:
-                            key = "%s %d HANDLES USED" % self._pName
+                            key = "%s HANDLES USED" % self._pName
                             if key not in retDict:
                                 retDict[key] = 0
                             retDict[key] += proc.num_handles()

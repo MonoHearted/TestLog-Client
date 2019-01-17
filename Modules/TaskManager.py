@@ -10,6 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 def createTask(Itr, Interval, config, startTime, executor=None):
+    """
+    :param Itr:
+    :param Interval:
+    :param config:
+    :param startTime:
+    :param executor:
+    :return: filePath
+    """
     procName = config['proc_info'].get('process_name')
     pid = config['proc_info'].get('pid')
 
@@ -142,8 +150,11 @@ def createTask(Itr, Interval, config, startTime, executor=None):
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
 
+    filePath = CPR._pName + '_' + startTime.replace(':', '-').replace('.', '_') + '_result.xls'
     summaryDF.to_excel(os.path.join(
         os.path.dirname(sys.modules['__main__'].__file__),
         "Output",
-        CPR._pName + '_' + startTime.replace(':', '-').replace('.', '_') + '_result.xls'
+        filePath
     ), index=False)
+
+    return filePath

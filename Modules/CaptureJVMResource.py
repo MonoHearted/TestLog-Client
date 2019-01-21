@@ -47,14 +47,15 @@ class CaptureJVMResource(object):
             logger.debug(e)
             raise e
 
-        startTime=time.time()
+        startTime = time.time()
         HeapPattern = re.compile(
-            r'\s+CPU:.*GC:\s+([0-9]+\.[0-9][0-9])%\s+HEAP:\s*(\d+)m\s+\/\d+m NONHEAP:.*$'
+            r'\s+CPU:.*GC:\s+([0-9]+\.[0-9][0-9])%\s+'
+            r'HEAP:\s*(\d+)m\s+\/\d+m NONHEAP:.*$'
         )
         try:
             logger.info("Start Jvmtop @ %d" % startTime)
             output = sp.stdout.readline().decode('ascii').rstrip()
-            while (time.time()-startTime<timeout):
+            while (time.time() - startTime < timeout):
                 if ("exception" in output.lower() or
                         "error" in output.lower()):
                     raise Exception("Fail to spawn a shell to run Jvmtop")
@@ -72,12 +73,11 @@ class CaptureJVMResource(object):
         except ChildProcessError:
             sp.kill()
             output, err = sp.communicate()
-            output=output.decode('ascii').rstrip()
-            err=err.decode('ascii').rstrip()
-            logger.error("Exception: %s\n%s" % (output,err))
+            output = output.decode('ascii').rstrip()
+            err = err.decode('ascii').rstrip()
+            logger.error("Exception: %s\n%s" % (output, err))
         # in case child process hang there after timeout
         # wait for 5 more seconds and exit
         if(sp.wait(5)):
             logger.error("Jvmtop exits with uncaught exceptions")
             raise ChildProcessError
-

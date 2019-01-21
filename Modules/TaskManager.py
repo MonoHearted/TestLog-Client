@@ -3,7 +3,8 @@ import time
 import pandas as pd
 from pandas import DataFrame as df
 from concurrent.futures import as_completed
-import os,sys
+import os
+import sys
 from Modules.Utility import convertBytesTo
 
 logger = logging.getLogger(__name__)
@@ -31,14 +32,13 @@ def createTask(Itr, Interval, config, startTime, executor=None):
     CJR = None
     if config.getboolean('proc_info', 'is_java_process'):
         from Modules.CaptureJVMResource import CaptureJVMResource
-        if(config.get('proc_info','java_home', fallback=None) is None or
-                config.get('proc_info', 'java_home', fallback=None) is ''
-            ):
+        if(config.get('proc_info', 'java_home', fallback=None) is None or
+                config.get('proc_info', 'java_home', fallback=None) is ''):
             raise ValueError("Invalid value for java_home")
 
         if (len(CPR.processes) == 1):
             javaPid = CPR.processes[0].info['pid']
-            CJR = CaptureJVMResource(config.get('proc_info','java_home'),
+            CJR = CaptureJVMResource(config.get('proc_info', 'java_home'),
                                      Interval, javaPid)
         else:
             logger.error("More than one Java process found")
@@ -53,10 +53,12 @@ def createTask(Itr, Interval, config, startTime, executor=None):
             # these two metric can be captured in real time
             is_per_disk = config.getboolean('system_info', 'per_disk')
             is_per_nic = config.getboolean('system_info', 'per_nic')
-            futures.append(executor.submit(CSR.getSysResourceUsage, is_per_disk, is_per_nic))
+            futures.append(executor.submit(CSR.getSysResourceUsage,
+                                           is_per_disk, is_per_nic))
 
             is_aggregate = config.getboolean('proc_info', 'aggregate_data')
-            futures.append(executor.submit(CPR.getProcessesStats, is_aggregate))
+            futures.append(executor.submit(CPR.getProcessesStats,
+                                           is_aggregate))
 
             # run jvmtop
             # jvmResult=CJR.startJob(Itr)
@@ -70,7 +72,7 @@ def createTask(Itr, Interval, config, startTime, executor=None):
         return res
 
     summaryDF = None
-    if(CJR is not None):
+    if CJR is not None:
         for jvmResult in CJR.startJob(Itr):
             if (summaryDF is None):
                 firstRow = runPerItr()
@@ -109,7 +111,8 @@ def createTask(Itr, Interval, config, startTime, executor=None):
 
         for percentile in percentiles:
             percentile = float(percentile)
-            percentileDict = summaryDF.quantile(percentile, numeric_only=True).to_dict()
+            percentileDict = summaryDF.quantile(percentile, numeric_only=True)\
+                .to_dict()
             percentileDict['Time'] = '%dth Percentile' % (percentile * 100)
             logger.debug("Percentile is: \n{}".format(percentileDict))
 
@@ -150,7 +153,8 @@ def createTask(Itr, Interval, config, startTime, executor=None):
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
 
-    filePath = CPR._pName + '_' + startTime.replace(':', '-').replace('.', '_') + '_result.xls'
+    filePath = CPR._pName + '_' + startTime.replace(':', '-')\
+        .replace('.', '_') + '_result.xls'
     summaryDF.to_excel(os.path.join(
         os.path.dirname(sys.modules['__main__'].__file__),
         "Output",

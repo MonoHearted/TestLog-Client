@@ -23,7 +23,8 @@ def setSectionForConfigParser(section, configSection, config):
             config.set(section, key,
                        config[section].get(key, configSection[key]))
 
-def cfgParser(argParser, parseGRPCOnly=False):
+
+def cfgParser(argParser):
     """
     load config file passed by cmdline arguments
     argument from cmdline will override
@@ -66,7 +67,7 @@ def cfgParser(argParser, parseGRPCOnly=False):
     # setup config for other arguments
     logger.info("Parsing configuration")
 
-    if parseGRPCOnly:
+    if argParser.server:
         # commandline argument overwrites
         if argParser.address is not None:
             address = argParser.address.split(':')
@@ -105,7 +106,8 @@ def cfgParser(argParser, parseGRPCOnly=False):
             except ValueError:
                 raise ValueError('PID must be an integer')
         elif config.get('proc_info', 'process_name', fallback=None) is None:
-            raise Exception('pid&process name are not defined in neither arguments nor config.')
+            raise Exception('pid & process name are not defined in '
+                            'neither arguments nor config.')
 
     # set default values for optionals in config
     defaultOptionalValues = {
@@ -141,4 +143,3 @@ def cfgParser(argParser, parseGRPCOnly=False):
             logger.debug("\t%s = %s" % (key, config[section][key]))
 
     return rootlogger, config
-

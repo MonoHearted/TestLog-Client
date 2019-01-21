@@ -1,7 +1,8 @@
 import logging
 from psutil import process_iter, NoSuchProcess
 from psutil import _exceptions as PSExceptions
-import platform, os
+import platform
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ class CaptureProcResource(object):
         self._pName = pName
         self._processes = list()
         self._OSPlatform = platform.system()
-        self._currentProcPid=os.getpid()
+        self._currentProcPid = os.getpid()
         logger.info("This process's pid is %d\n\n\n" % self._currentProcPid)
         if (pid is not None):
             self.initProcessObjectWithPid()
@@ -61,10 +62,10 @@ class CaptureProcResource(object):
         for proc in process_iter(attrs=attrList):
             try:
                 if (pName.lower() in ' '.join(proc.cmdline()).lower() and
-                    proc.pid != self._currentProcPid):
-                        logger.debug('Adding this process')
-                        logger.debug(proc.info)
-                        self._processes.append(proc)
+                        proc.pid != self._currentProcPid):
+                            logger.debug('Adding this process')
+                            logger.debug(proc.info)
+                            self._processes.append(proc)
             except PSExceptions.AccessDenied:
                 pass
         if (len(self._processes) < 1):

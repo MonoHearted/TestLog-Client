@@ -14,6 +14,7 @@ from grpc._channel import _Rendezvous
 from Modules.Utility import singletonThreadPool
 from Modules.ConfigParser import cfgParser
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Capture Resource Usage')
 
@@ -24,13 +25,15 @@ def parse_arguments():
     parser.add_argument("-s", "--server", action='store_true',
                         help='run NGLogman in gRPC mode, may specify address')
 
-    parser.add_argument('-ip', '--address', type=str, dest='address', required=False, default=None,
+    parser.add_argument('-ip', '--address', type=str, dest='address',
+                        required=False, default=None,
                         help='specify server address&port (x.x.x.x:port)')
 
     if '-s' not in sys.argv and '--server' not in sys.argv:
         parser.add_argument("interval", type=int, help='specify interval')
 
-        parser.add_argument("duration", type=int,help='specify duration for capturing')
+        parser.add_argument("duration", type=int,
+                            help='specify duration for capturing')
 
         parser.add_argument("-pn", "--process-name", dest="procName", type=str,
                             default=None,
@@ -59,9 +62,12 @@ def logMain(params=None):
     import math
     numItr = int(math.ceil(args.duration / args.interval))
     from Modules.TaskManager import createTask
-    executor = singletonThreadPool(max_workers=config.getint('workers','pool'))
+    executor = singletonThreadPool(max_workers=config
+                                   .getint('workers', 'pool'))
     logger.info(time.time())
-    return createTask(numItr, args.interval, config, datetime.datetime.now().isoformat(), executor=executor)
+    return createTask(numItr, args.interval, config, datetime.datetime.now()
+                      .isoformat(), executor=executor)
+
 
 def checkConnection(address, hostingPort):
     try:
@@ -79,9 +85,10 @@ def registerClient(address, hostingPort):
 
     import netifaces as ni
     hostName = socket.gethostname()
-    hostIPv4 = ni.ifaddresses('eth0')[ni.AF_INET][0]['addr']
+    hostIPv4 = socket.gethostbyname(hostName) # ni.ifaddresses('eth0')[ni.AF_INET][0]['addr']
 
-    clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4, port=hostingPort)
+    clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4,
+                                     port=hostingPort)
     try:
         response = stub.register(clientInfo)
 
@@ -111,11 +118,12 @@ def createServer(port):
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
-    if args.server is not False:
-        logger, grpcConfig = cfgParser(args, parseGRPCOnly=True)
+    if '-s' in sys.argv or '--server' in sys.argv:
+        args = parse_arguments()
+        logger, grpcConfig = cfgParser(args)
 
-        serverAddress = grpcConfig.get('grpc', 'server_ip') + ':' + grpcConfig.get('grpc', 'server_port')
+        serverAddress = grpcConfig.get('grpc', 'server_ip') + ':' + \
+            grpcConfig.get('grpc', 'server_port')
         hostPort = grpcConfig.get('grpc', 'host_port')
 
         registerClient(serverAddress, int(hostPort))

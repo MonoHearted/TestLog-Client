@@ -14,9 +14,19 @@ class LoggingServicer(nglm_pb2_grpc.LoggingServicer):
     def start(self, request, context):
         try:
             from NGLogmanClient import logMain
-            filePath = os.path.join(os.path.dirname(sys.modules['__main__'].__file__),
-                                    "Output", logMain(params=request))
+            filePath = os.path.join(
+                os.path.dirname(sys.modules['__main__'].__file__),
+                "Output", logMain(params=request))
             return getChunks(filePath)
+        except:
+            raise
+
+    def getConfig(self, request, context):
+        try:
+            configPath = os.path.join(
+                os.path.dirname(sys.modules['__main__'].__file__),
+                "config", "logman.ini")
+            return getChunks(configPath)
         except:
             raise
 

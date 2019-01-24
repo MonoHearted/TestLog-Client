@@ -85,7 +85,10 @@ def registerClient(address, hostingPort):
 
     import netifaces as ni
     hostName = socket.gethostname()
-    hostIPv4 = socket.gethostbyname(hostName) # ni.ifaddresses('eth0')[ni.AF_INET][0]['addr']
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    hostIPv4 = s.getsockname()[0]
+    s.close()
 
     clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4,
                                      port=hostingPort)

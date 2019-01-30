@@ -99,6 +99,17 @@ class CaptureProcResource(object):
                         if key not in retDict:
                             retDict[key] = 0
                         retDict[key] += proc.num_threads()
+
+                        key = "%s PRIVATE BYTES USED" % self._pName
+                        if key not in retDict:
+                            retDict[key] = 0
+                        retDict[key] += proc.memory_info().rss
+
+                        key = "%s VIRTUAL BYTES USED" % self._pName
+                        if key not in retDict:
+                            retDict[key] = 0
+                        retDict[key] += proc.memory_info().vms
+
                 except NoSuchProcess:
                     pass
         else:
@@ -106,22 +117,30 @@ class CaptureProcResource(object):
                 try:
                     with proc.oneshot():
                         key = "%s %d CPU USED PERCENTAGE" % (self._pName,
-                                                             proc.info['pid'])
+                                                             proc.pid)
                         retDict[key] = proc.cpu_percent()
 
                         if ('Linux' in self._OSPlatform):
                             key = "%s %d FILE DESCRIPTORS OPENED" % (
                                 self._pName,
-                                proc.info['pid'])
+                                proc.pid)
                             retDict[key] = proc.num_fds()
                         else:
                             key = "%s %d HANDLES USED" % (self._pName,
-                                                          proc.info['pid'])
+                                                          proc.pid)
                             retDict[key] = proc.num_handles()
 
                         key = "%s %d THREADS USED" % (self._pName,
-                                                      proc.info['pid'])
+                                                      proc.pid)
                         retDict[key] = proc.num_threads()
+
+                        key = "%s %d PRIVATE BYTES USED" % (self._pName,
+                                                            proc.pid)
+                        retDict[key] = proc.memory_info().rss
+
+                        key = "%s %d VIRTUAL BYTES USED" % (self._pName,
+                                                            proc.pid)
+                        retDict[key] = proc.memory_info().vms
                 except NoSuchProcess:
                     pass
         return retDict

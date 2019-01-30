@@ -2,6 +2,7 @@ from __future__ import division
 import logging
 from concurrent.futures.thread import ThreadPoolExecutor
 from functools import wraps
+from Modules.ConfigParser import cfgParser
 
 logger = logging.getLogger(__name__)
 
@@ -51,13 +52,26 @@ class Singleton(type):
         self.__instance = None
         super().__init__(*args, **kwargs)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, reset=False, **kwargs):
+        if reset:
+            self.__instance = None
         if self.__instance is None:
             self.__instance = super().__call__(*args, **kwargs)
             return self.__instance
         else:
             return self.__instance
 
+# class Config(metaclass=Singleton):
+#     def __init__(self, argParser):
+#         tup = cfgParser(argParser)
+#         self.__logger = tup[0]
+#         self.__cfg = tup[1]
+#
+#     def getLogger(self):
+#         return self.__logger
+#
+#     def __getattr__(self, attr):
+#         return getattr(self.__cfg, attr)
 
 class singletonThreadPool(ThreadPoolExecutor,metaclass=Singleton):
     """

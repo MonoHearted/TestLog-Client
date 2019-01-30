@@ -5,14 +5,14 @@ import datetime
 import argparse
 import sys
 from contextlib import contextmanager
+import configparser
 
 import nglm_grpc.nglm_pb2 as nglm_pb2
 import nglm_grpc.nglm_pb2_grpc as nglm_pb2_grpc
 from nglm_grpc.gRPCMethods import addToServer
 from grpc._channel import _Rendezvous
 
-from Modules.Utility import singletonThreadPool
-from Modules.ConfigParser import cfgParser
+from Modules.Utility import singletonThreadPool, Config
 
 
 def parse_arguments():
@@ -55,7 +55,8 @@ def logMain(params=None):
         (args.pid, args.procName) = (params.pid, params.pname)
         (args.interval, args.duration) = (params.interval, params.duration)
 
-    logger, config = cfgParser(args)
+    config = Config(args, reset=True)
+    logger = config.getLogger()
 
     logger.info("Beginning execution of %s" % sys.argv)
 
@@ -65,8 +66,13 @@ def logMain(params=None):
     executor = singletonThreadPool(max_workers=config
                                    .getint('workers', 'pool'))
     logger.info(time.time())
-    return createTask(numItr, args.interval, config, datetime.datetime.now()
+    fileName = createTask(numItr, args.interval, datetime.datetime.now()
                       .isoformat(), executor=executor)
+
+    from nglm_grpc.gRPCMethods import output
+    addr = config.get('grpc', 'server_ip') \
+        + ':' + config.get('grpc', 'server_port')
+    output(fileName, addr, config.get('grpc', 'node_uuid'))
 
 
 def checkConnection(address, hostingPort):
@@ -82,23 +88,35 @@ def checkConnection(address, hostingPort):
 def registerClient(address, hostingPort):
     channel = grpc.insecure_channel(address)
     stub = nglm_pb2_grpc.ServerStub(channel)
+    config = configparser.ConfigParser()
+    config.read('config/logman.ini')
 
-    import netifaces as ni
     hostName = socket.gethostname()
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     hostIPv4 = s.getsockname()[0]
     s.close()
 
-    clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4,
-                                     port=hostingPort)
+    selfUUID = config.get('grpc', 'node_uuid', fallback='')
+    if selfUUID is not None:
+        clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4,
+                                         port=hostingPort, uuid=selfUUID)
+    else:
+        clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4,
+                                         port=hostingPort)
+
     try:
         response = stub.register(clientInfo)
-
         if not response.success:
             # server side register raised exception
             raise RuntimeError('Failed to register client.')
         logger.info('Connected to ' + address)
+
+        if not selfUUID and response.uuid is not None:
+            config['grpc']['node_uuid'] = str(response.uuid)
+            with open('config/logman.ini', 'w') as configFile:
+                config.write(configFile)
+
     except _Rendezvous:
         logger.error('Failed to connect. Retrying in 5s...')
         channel.close()
@@ -123,7 +141,8 @@ def createServer(port):
 if __name__ == '__main__':
     if '-s' in sys.argv or '--server' in sys.argv:
         args = parse_arguments()
-        logger, grpcConfig = cfgParser(args)
+        grpcConfig = Config(args, reset=True)
+        logger = grpcConfig.getLogger()
 
         serverAddress = grpcConfig.get('grpc', 'server_ip') + ':' + \
             grpcConfig.get('grpc', 'server_port')

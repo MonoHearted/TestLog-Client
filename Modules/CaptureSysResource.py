@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 def sysResourceTuple(fieldsList):
     return namedtuple("SystemResource", fieldsList)
 
+
 class CaptureSysResource(object):
     """
     A thread based object, constructor requires a param interval
@@ -99,7 +100,7 @@ class CaptureSysResource(object):
         if type(diskIO) == dict and type(diskIOPre) == dict:
             assert (diskIO.keys() == diskIOPre.keys()), "disks differ during interval"
             for name, tup in diskIO.items():
-                tup = ntDisk(*tuple(numpy.subtract(tup, diskIOPre[name])))
+                diskIO[name] = ntDisk(*tuple(numpy.subtract(tup, diskIOPre[name])))
         else:
             diskIO = ntDisk(*tuple(numpy.subtract(diskIO, diskIOPre)))
 
@@ -108,6 +109,7 @@ class CaptureSysResource(object):
              memBufferedBytes) = self.getMemStats()
         else:
             (memAvailBytes, memUsedPercentage) = self.getMemStats()
+
 
         retDict = dict()
         retDict['OVERALL CPU USED PERCENTAGE'] = CPUPercent

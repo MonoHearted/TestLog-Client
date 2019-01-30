@@ -5,12 +5,12 @@ from pandas import DataFrame as df
 from concurrent.futures import as_completed
 import os
 import sys
-from Modules.Utility import convertBytesTo
+from Modules.Utility import convertBytesTo, Config
 
 logger = logging.getLogger(__name__)
 
 
-def createTask(Itr, Interval, config, startTime, executor=None):
+def createTask(Itr, Interval, startTime, executor=None):
     """
     :param Itr:
     :param Interval:
@@ -19,8 +19,9 @@ def createTask(Itr, Interval, config, startTime, executor=None):
     :param executor:
     :return: filePath
     """
-    procName = config['proc_info'].get('process_name')
-    pid = config['proc_info'].get('pid')
+
+    procName = Config.get('proc_info', 'process_name')
+    pid = Config.get('proc_info', 'pid')
 
     logger.info("Starting Task @ {}".format(time.time()))
     from Modules.CaptureSysResource import CaptureSysResource
@@ -30,33 +31,33 @@ def createTask(Itr, Interval, config, startTime, executor=None):
     CPR = CaptureProcResource(pid, procName)
 
     CJR = None
-    if config.getboolean('proc_info', 'is_java_process'):
+    if Config.getboolean('proc_info', 'is_java_process'):
         from Modules.CaptureJVMResource import CaptureJVMResource
-        if(config.get('proc_info', 'java_home', fallback=None) is None or
-                config.get('proc_info', 'java_home', fallback=None) is ''):
+        if(Config.get('proc_info', 'java_home', fallback=None) is None or
+                Config.get('proc_info', 'java_home', fallback=None) is ''):
             raise ValueError("Invalid value for java_home")
 
         if (len(CPR.processes) == 1):
             javaPid = CPR.processes[0].info['pid']
-            CJR = CaptureJVMResource(config.get('proc_info', 'java_home'),
+            CJR = CaptureJVMResource(Config.get('proc_info', 'java_home'),
                                      Interval, javaPid)
         else:
             logger.error("More than one Java process found")
             sys.exit(1)
     futures = []
 
-    @convertBytesTo(unit=config.get('data', 'unit'))
+    @convertBytesTo(unit=Config.get('data', 'unit'))
     def runPerItr():
         res = dict()
         res['Time'] = pd.datetime.now().time()
         try:
             # these two metric can be captured in real time
-            is_per_disk = config.getboolean('system_info', 'per_disk')
-            is_per_nic = config.getboolean('system_info', 'per_nic')
+            is_per_disk = Config.getboolean('system_info', 'per_disk')
+            is_per_nic = Config.getboolean('system_info', 'per_nic')
             futures.append(executor.submit(CSR.getSysResourceUsage,
                                            is_per_disk, is_per_nic))
 
-            is_aggregate = config.getboolean('proc_info', 'aggregate_data')
+            is_aggregate = Config.getboolean('proc_info', 'aggregate_data')
             futures.append(executor.submit(CPR.getProcessesStats,
                                            is_aggregate))
 
@@ -104,7 +105,7 @@ def createTask(Itr, Interval, config, startTime, executor=None):
     logger.debug(summaryDF.dtypes)
     logger.debug("Summary is:\n{}".format(summaryDF))
 
-    percentiles = config['data'].get('percentile')
+    percentiles = Config['data'].get('percentile')
     if bool(percentiles):
         percentiles = percentiles.split(',')
         logger.debug("Calculating percentile...")
@@ -120,7 +121,7 @@ def createTask(Itr, Interval, config, startTime, executor=None):
             summaryDF = summaryDF.append(percentileDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
 
-    if config.getboolean('data', 'average') is True:
+    if Config.getboolean('data', 'average') is True:
         # same as above, but for mean
         logger.debug("Calculating average...")
 
@@ -131,7 +132,7 @@ def createTask(Itr, Interval, config, startTime, executor=None):
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
 
-    if config.getboolean('data', 'max') is True:
+    if Config.getboolean('data', 'max') is True:
         # same as above, but for mean
         logger.debug("Calculating maxima...")
 
@@ -142,7 +143,7 @@ def createTask(Itr, Interval, config, startTime, executor=None):
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
 
-    if config.getboolean('data', 'min') is True:
+    if Config.getboolean('data', 'min') is True:
         # same as above, but for mean
         logger.debug("Calculating minima...")
 
@@ -152,6 +153,21 @@ def createTask(Itr, Interval, config, startTime, executor=None):
 
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
+
+    if Config.getfloat('data', 'leading_trim_percent') > 0:
+        trim_frac = Config.getfloat('data', 'leading_trim_percent') / 100
+        row_count = len(summaryDF.index)
+        to_trim = round(trim_frac * row_count)
+        summaryDF = summaryDF[to_trim:]
+        logger.debug('Trimmed %d leading rows.' % to_trim)
+
+    if Config.getfloat('data', 'trailing_trim_percent') > 0:
+        trim_frac = Config.getfloat('data', 'trailing_trim_percent') / 100
+        row_count = len(summaryDF.index)
+        to_trim = round(trim_frac * row_count)
+        end_index = row_count - to_trim
+        summaryDF = summaryDF[:end_index]
+        logger.debug('Trimmed %d trailing rows.' % to_trim)
 
     filePath = CPR._pName + '_' + startTime.replace(':', '-')\
         .replace('.', '_') + '_result.xls'

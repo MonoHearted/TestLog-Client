@@ -1,6 +1,7 @@
 from . import nglm_pb2
 from . import nglm_pb2_grpc
 import os, sys
+import grpc
 
 
 class ServerServicer(nglm_pb2_grpc.ServerServicer):
@@ -14,10 +15,11 @@ class LoggingServicer(nglm_pb2_grpc.LoggingServicer):
     def start(self, request, context):
         try:
             from NGLogmanClient import logMain
-            filePath = os.path.join(
-                os.path.dirname(sys.modules['__main__'].__file__),
-                "Output", logMain(params=request))
-            return getChunks(filePath)
+            from threading import Thread
+            Thread(target=logMain, kwargs=dict(params=request)).start()
+            res = nglm_pb2.response()
+            res.success = True
+            return res
         except:
             raise
 
@@ -29,6 +31,19 @@ class LoggingServicer(nglm_pb2_grpc.LoggingServicer):
             return getChunks(configPath)
         except:
             raise
+
+
+def output(path, address, uuid):
+    try:
+        from NGLogmanClient import logMain
+        channel = grpc.insecure_channel(address)
+        stub = nglm_pb2_grpc.LoggingStub(channel)
+        filePath = os.path.join(
+            os.path.dirname(sys.modules['__main__'].__file__),
+            "Output", path)
+        stub.output(getChunks(filePath), metadata=[('uuid', uuid)])
+    except:
+        raise
 
 
 def getChunks(path):

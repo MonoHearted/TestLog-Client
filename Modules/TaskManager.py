@@ -5,12 +5,12 @@ from pandas import DataFrame as df
 from concurrent.futures import as_completed
 import os
 import sys
-from Modules.Utility import convertBytesTo, Config
+from Modules.Utility import convertBytesTo
 
 logger = logging.getLogger(__name__)
 
 
-def createTask(Itr, Interval, startTime, executor=None):
+def createTask(Itr, Config, Interval, startTime, executor=None):
     """
     :param Itr:
     :param Interval:
@@ -154,27 +154,25 @@ def createTask(Itr, Interval, startTime, executor=None):
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
 
+    row_count = len(summaryDF.index)
     if Config.getfloat('data', 'leading_trim_percent') > 0:
         trim_frac = Config.getfloat('data', 'leading_trim_percent') / 100
-        row_count = len(summaryDF.index)
         to_trim = round(trim_frac * row_count)
         summaryDF = summaryDF[to_trim:]
         logger.debug('Trimmed %d leading rows.' % to_trim)
 
     if Config.getfloat('data', 'trailing_trim_percent') > 0:
         trim_frac = Config.getfloat('data', 'trailing_trim_percent') / 100
-        row_count = len(summaryDF.index)
         to_trim = round(trim_frac * row_count)
         end_index = row_count - to_trim
         summaryDF = summaryDF[:end_index]
         logger.debug('Trimmed %d trailing rows.' % to_trim)
 
     filePath = CPR._pName + '_' + startTime.replace(':', '-')\
-        .replace('.', '_') + '_result.xls'
+        .replace('.', '_') + '_result.xlsx'
     summaryDF.to_excel(os.path.join(
         os.path.dirname(sys.modules['__main__'].__file__),
-        "Output",
-        filePath
-    ), index=False)
+        "Output", filePath
+    ), index=False, engine="openpyxl")
 
     return filePath

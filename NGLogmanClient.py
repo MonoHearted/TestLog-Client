@@ -12,7 +12,8 @@ import nglm_grpc.nglm_pb2_grpc as nglm_pb2_grpc
 from nglm_grpc.gRPCMethods import addToServer
 from grpc._channel import _Rendezvous
 
-from Modules.Utility import singletonThreadPool, Config
+from Modules.Utility import singletonThreadPool
+from Modules.ConfigParser import cfgParser
 
 
 def parse_arguments():
@@ -55,8 +56,7 @@ def logMain(params=None):
         (args.pid, args.procName) = (params.pid, params.pname)
         (args.interval, args.duration) = (params.interval, params.duration)
 
-    config = Config(args, reset=True)
-    logger = config.getLogger()
+    logger, config = cfgParser(args)
 
     logger.info("Beginning execution of %s" % sys.argv)
 
@@ -66,7 +66,7 @@ def logMain(params=None):
     executor = singletonThreadPool(max_workers=config
                                    .getint('workers', 'pool'))
     logger.info(time.time())
-    fileName = createTask(numItr, args.interval, datetime.datetime.now()
+    fileName = createTask(numItr, config, args.interval, datetime.datetime.now()
                       .isoformat(), executor=executor)
 
     from nglm_grpc.gRPCMethods import output
@@ -141,8 +141,7 @@ def createServer(port):
 if __name__ == '__main__':
     if '-s' in sys.argv or '--server' in sys.argv:
         args = parse_arguments()
-        grpcConfig = Config(args, reset=True)
-        logger = grpcConfig.getLogger()
+        logger, grpcConfig = cfgParser(args)
 
         serverAddress = grpcConfig.get('grpc', 'server_ip') + ':' + \
             grpcConfig.get('grpc', 'server_port')

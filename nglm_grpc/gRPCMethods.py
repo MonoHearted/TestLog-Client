@@ -1,8 +1,10 @@
 from . import nglm_pb2
 from . import nglm_pb2_grpc
+import logging
 import os, sys
 import grpc
 
+logger = logging.getLogger(__name__)
 
 class ServerServicer(nglm_pb2_grpc.ServerServicer):
     def isAlive(self, request, context):
@@ -32,6 +34,19 @@ class LoggingServicer(nglm_pb2_grpc.LoggingServicer):
         except:
             raise
 
+    def setConfig(self, request, context):
+        res = nglm_pb2.response()
+        try:
+            configPath = os.path.join(
+                os.path.dirname(sys.modules['__main__'].__file__),
+                "config", "logman.ini")
+            saveResponse(request, configPath)
+            res.success = True
+        except Exception as e:
+            logger.error(e)
+            res.success = False
+        return res
+
 
 def output(path, address, uuid):
     try:
@@ -53,6 +68,13 @@ def getChunks(path):
             if len(chunk) == 0:
                 return
             yield nglm_pb2.chunks(buffer=chunk)
+
+def saveResponse(chunks, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'wb') as f:
+        for chunk in chunks:
+            f.write(chunk.buffer)
+        print('saved to %s' % path)
 
 
 def addToServer(server):

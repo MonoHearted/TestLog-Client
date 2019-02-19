@@ -105,7 +105,7 @@ def cfgParser(argParser):
                 int(config.get('proc_info', 'pid'))
             except ValueError:
                 raise ValueError('PID must be an integer')
-        elif config.get('proc_info', 'process_name', fallback='') is not '':
+        elif config.get('proc_info', 'process_name', fallback='') is '':
             raise Exception('pid & process name are not defined in '
                             'neither arguments nor config.')
 

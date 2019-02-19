@@ -106,6 +106,22 @@ def createTask(Itr, Config, Interval, startTime, executor=None):
     logger.debug("Summary is:\n{}".format(summaryDF))
 
     percentiles = Config['data'].get('percentile')
+    excl = 0
+    row_count = len(summaryDF.index)
+
+    if Config.getfloat('data', 'leading_trim_percent') > 0:
+        trim_frac = Config.getfloat('data', 'leading_trim_percent') / 100
+        to_trim = round(trim_frac * row_count)
+        summaryDF = summaryDF[to_trim:]
+        logger.debug('Trimmed %d leading rows.' % to_trim)
+
+    if Config.getfloat('data', 'trailing_trim_percent') > 0:
+        trim_frac = Config.getfloat('data', 'trailing_trim_percent') / 100
+        to_trim = round(trim_frac * row_count)
+        end_index = row_count - to_trim
+        summaryDF = summaryDF[:end_index]
+        logger.debug('Trimmed %d trailing rows.' % to_trim)
+
     if bool(percentiles):
         percentiles = percentiles.split(',')
         logger.debug("Calculating percentile...")
@@ -120,53 +136,43 @@ def createTask(Itr, Config, Interval, startTime, executor=None):
             # Adding this row back to summaryDF
             summaryDF = summaryDF.append(percentileDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
+        excl += len(percentiles)
 
     if Config.getboolean('data', 'average') is True:
         # same as above, but for mean
         logger.debug("Calculating average...")
 
-        averageDict = summaryDF.iloc[:-1].mean(numeric_only=True).to_dict()
+        averageDict = summaryDF.iloc[:-excl].mean(numeric_only=True).to_dict()
         averageDict['Time'] = 'Mean'
         logger.debug('Averages are: \n{}'.format(averageDict))
 
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
+        excl += 1
 
     if Config.getboolean('data', 'max') is True:
         # same as above, but for mean
         logger.debug("Calculating maxima...")
 
-        averageDict = summaryDF.iloc[:-2].max(numeric_only=True).to_dict()
+        averageDict = summaryDF.iloc[:-excl].max(numeric_only=True).to_dict()
         averageDict['Time'] = 'Max'
         logger.debug('Maxima are: \n{}'.format(averageDict))
 
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
+        excl += 1
 
     if Config.getboolean('data', 'min') is True:
         # same as above, but for mean
         logger.debug("Calculating minima...")
 
-        averageDict = summaryDF.iloc[:-3].min(numeric_only=True).to_dict()
+        averageDict = summaryDF.iloc[:-excl].min(numeric_only=True).to_dict()
         averageDict['Time'] = 'Min'
         logger.debug('Minima are: \n{}'.format(averageDict))
 
         summaryDF = summaryDF.append(averageDict, ignore_index=True)
         logger.debug("Summary is:\n{}".format(summaryDF))
-
-    row_count = len(summaryDF.index)
-    if Config.getfloat('data', 'leading_trim_percent') > 0:
-        trim_frac = Config.getfloat('data', 'leading_trim_percent') / 100
-        to_trim = round(trim_frac * row_count)
-        summaryDF = summaryDF[to_trim:]
-        logger.debug('Trimmed %d leading rows.' % to_trim)
-
-    if Config.getfloat('data', 'trailing_trim_percent') > 0:
-        trim_frac = Config.getfloat('data', 'trailing_trim_percent') / 100
-        to_trim = round(trim_frac * row_count)
-        end_index = row_count - to_trim
-        summaryDF = summaryDF[:end_index]
-        logger.debug('Trimmed %d trailing rows.' % to_trim)
+        excl += 1
 
     filePath = CPR._pName + '_' + startTime.replace(':', '-')\
         .replace('.', '_') + '_result.xlsx'

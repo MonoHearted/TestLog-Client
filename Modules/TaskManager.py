@@ -21,7 +21,7 @@ def createTask(Itr, Config, Interval, startTime, executor=None):
     """
 
     procName = Config.get('proc_info', 'process_name')
-    pid = Config.get('proc_info', 'pid')
+    pid = Config.get('proc_info', 'pid') or None
 
     logger.info("Starting Task @ {}".format(time.time()))
     from Modules.CaptureSysResource import CaptureSysResource

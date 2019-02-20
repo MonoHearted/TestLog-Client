@@ -72,7 +72,9 @@ def logMain(params=None):
     from nglm_grpc.gRPCMethods import output
     addr = config.get('grpc', 'server_ip') \
         + ':' + config.get('grpc', 'server_port')
-    output(fileName, addr, config.get('grpc', 'node_uuid'))
+
+    if '-s' or '--server' in sys.argv:
+        output(fileName, addr, config.get('grpc', 'node_uuid'))
 
 
 def checkConnection(address, hostingPort):

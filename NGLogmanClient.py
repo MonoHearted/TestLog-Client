@@ -94,12 +94,12 @@ def registerClient(address, hostingPort):
     config.read('config/logman.ini')
 
     hostName = socket.gethostname()
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    hostIPv4 = s.getsockname()[0]
-    s.close()
-
+    hostIPv4 = config.get('proc_info', 'self_address', fallback='')
     selfUUID = config.get('grpc', 'node_uuid', fallback='')
+
+    if not hostIPv4:
+        raise configparser.NoOptionError('self_address', 'proc_info')
+
     if selfUUID is not None:
         clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4,
                                          port=hostingPort, uuid=selfUUID)
@@ -141,6 +141,9 @@ def createServer(port):
 
 
 if __name__ == '__main__':
+    if sys.version_info[0] < 3:
+        raise Exception("Must be using Python 3.")
+
     if '-s' in sys.argv or '--server' in sys.argv:
         args = parse_arguments()
         logger, grpcConfig = cfgParser(args)

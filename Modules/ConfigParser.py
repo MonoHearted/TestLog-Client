@@ -74,8 +74,10 @@ def cfgParser(argParser):
             config.set('grpc', 'server_ip', address[0])
             config.set('grpc', 'server_port', address[1])
 
+
         # validate mandatory options
-        mandatoryOpts = [('grpc', 'server_ip'), ('grpc', 'server_port')]
+        mandatoryOpts = [('grpc', 'server_ip'), ('grpc', 'server_port'),
+                         ('proc_info', 'self_address')]
 
         def validateMandatoryOpts(sectionOpt):
             retOpt = config.get(sectionOpt[0], sectionOpt[1], fallback=None)

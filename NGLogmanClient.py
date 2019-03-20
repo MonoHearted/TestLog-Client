@@ -49,32 +49,40 @@ def parse_arguments():
 
 
 def logMain(params=None):
-    args = parse_arguments()
+    try:
+        args = parse_arguments()
 
-    if params is not None:
-        # grpc parameter overwrites
-        (args.pid, args.procName) = (params.pid, params.pname)
-        (args.interval, args.duration) = (params.interval, params.duration)
+        if params is not None:
+            # grpc parameter overwrites
+            (args.pid, args.procName) = (params.pid, params.pname)
+            (args.interval, args.duration) = (params.interval, params.duration)
 
-    logger, config = cfgParser(args)
+        logger, config = cfgParser(args)
+        logger.info("Beginning execution of %s" % sys.argv)
 
-    logger.info("Beginning execution of %s" % sys.argv)
+        import math
+        numItr = int(math.ceil(args.duration / args.interval))
+        from Modules.TaskManager import createTask
+        executor = singletonThreadPool(max_workers=config
+                                       .getint('workers', 'pool'))
+        logger.info(time.time())
+        fileName = createTask(numItr, config, args.interval,
+                              datetime.datetime.now().isoformat(),
+                              executor=executor)
 
-    import math
-    numItr = int(math.ceil(args.duration / args.interval))
-    from Modules.TaskManager import createTask
-    executor = singletonThreadPool(max_workers=config
-                                   .getint('workers', 'pool'))
-    logger.info(time.time())
-    fileName = createTask(numItr, config, args.interval, datetime.datetime.now()
-                      .isoformat(), executor=executor)
+        from nglm_grpc.gRPCMethods import output
+        addr = config.get('grpc', 'server_ip') \
+            + ':' + config.get('grpc', 'server_port')
 
-    from nglm_grpc.gRPCMethods import output
-    addr = config.get('grpc', 'server_ip') \
-        + ':' + config.get('grpc', 'server_port')
+        if '-s' or '--server' in sys.argv:
+            output(fileName, addr, config.get('grpc', 'node_uuid'))
 
-    if '-s' or '--server' in sys.argv:
-        output(fileName, addr, config.get('grpc', 'node_uuid'))
+    except Exception as e:
+        if '-s' in sys.argv or '--server' in sys.argv:
+            from nglm_grpc.gRPCMethods import err
+            err(e)
+        else:
+            raise e
 
 
 def checkConnection(address, hostingPort):
@@ -163,3 +171,4 @@ if __name__ == '__main__':
                 pass
     else:
         logMain()
+

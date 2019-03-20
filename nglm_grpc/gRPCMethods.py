@@ -50,13 +50,30 @@ class LoggingServicer(nglm_pb2_grpc.LoggingServicer):
 
 def output(path, address, uuid):
     try:
-        from NGLogmanClient import logMain
         channel = grpc.insecure_channel(address)
         stub = nglm_pb2_grpc.LoggingStub(channel)
         filePath = os.path.join(
             os.path.dirname(sys.modules['__main__'].__file__),
             "Output", path)
         stub.output(getChunks(filePath), metadata=[('uuid', uuid)])
+    except:
+        raise
+
+
+def err(e):
+    try:
+        import configparser
+        config = configparser.ConfigParser()
+        config.read('config/logman.ini')
+
+        address = config.get('grpc', 'server_ip') \
+            + ':' + config.get('grpc', 'server_port')
+        uuid = config.get('grpc', 'node_uuid')
+
+        channel = grpc.insecure_channel(address)
+        stub = nglm_pb2_grpc.LoggingStub(channel)
+        stub.err(nglm_pb2.exception(exception=repr(e))
+                 , metadata=[('uuid', uuid)])
     except:
         raise
 

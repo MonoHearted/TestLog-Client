@@ -65,7 +65,7 @@ def createTask(Itr, Config, Interval, startTime, executor=None):
             # jvmResult=CJR.startJob(Itr)
             # result.update(jvmResult)
             for task in as_completed(futures):
-                logger.info(task.result())
+                logger.debug(task.result())
                 res.update(task.result())
         except Exception as e:
             raise e
@@ -82,7 +82,7 @@ def createTask(Itr, Config, Interval, startTime, executor=None):
                 summaryDF = df([firstRowData],
                                columns=list(firstRow.keys())
                                )
-                logger.info("Summary is:\n{}".format(summaryDF))
+                logger.debug("Summary is:\n{}".format(summaryDF))
                 continue
             retRow = runPerItr()
             retRow.update(jvmResult)
@@ -96,7 +96,7 @@ def createTask(Itr, Config, Interval, startTime, executor=None):
                 summaryDF = df([firstRowData],
                                columns=list(firstRow.keys())
                                )
-                logger.info("Summary is:\n{}".format(summaryDF))
+                logger.debug("Summary is:\n{}".format(summaryDF))
                 continue
             retRow = runPerItr()
             logger.debug(retRow)
@@ -180,5 +180,7 @@ def createTask(Itr, Config, Interval, startTime, executor=None):
         os.path.dirname(sys.modules['__main__'].__file__),
         "Output", filePath
     ), index=False, engine="openpyxl")
+    logger.info('DataFrame mememory used: ' + str(
+        summaryDF.memory_usage(index=True).sum()))
 
     return filePath

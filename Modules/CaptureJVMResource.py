@@ -56,9 +56,9 @@ class CaptureJVMResource(object):
             logger.info("Start Jvmtop @ %d" % startTime)
             output = sp.stdout.readline().decode('ascii').rstrip()
             while (time.time() - startTime < timeout):
-                if ("exception" in output.lower() or
-                        "error" in output.lower()):
-                    raise Exception("Fail to spawn a shell to run Jvmtop")
+                if "exception" in output.lower():
+                        # or "error" in output.lower():
+                    raise Exception("JVMTop Failed: %s" % output)
                 # logger.debug(output)
                 HeapMatched = HeapPattern.match(output)
                 if (HeapMatched is not None):
@@ -77,7 +77,9 @@ class CaptureJVMResource(object):
             err = err.decode('ascii').rstrip()
             logger.error("Exception: %s\n%s" % (output, err))
         # in case child process hang there after timeout
-        # wait for 5 more seconds and exit
-        if(sp.wait(5)):
-            logger.error("Jvmtop exits with uncaught exceptions")
-            raise ChildProcessError
+        # wait for 30 more seconds and exit
+        try:
+            sp.wait(30)
+        except:
+            logger.warning('The subprocess was forced to exit after waiting '
+                           'for 30 seconds.')

@@ -1,5 +1,6 @@
 import socket
 import grpc
+import os
 import time
 import datetime
 import argparse
@@ -152,6 +153,13 @@ if __name__ == '__main__':
     if sys.version_info[0] < 3:
         raise Exception("Must be using Python 3.")
 
+    if not os.path.exists('Output'):
+        os.makedirs('Output')
+    
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+
+
     if '-s' in sys.argv or '--server' in sys.argv:
         args = parse_arguments()
         logger, grpcConfig = cfgParser(args)
@@ -171,4 +179,3 @@ if __name__ == '__main__':
                 pass
     else:
         logMain()
-

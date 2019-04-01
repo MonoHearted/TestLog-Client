@@ -1,9 +1,9 @@
 #!/bin/sh
-# jvmtop - java monitoring for the command-line 
-# launch script
+# jvmtop - java monitoring for the command-line
+# launch scrip
 #
 # author: Markus Kolb
-# 
+#
 
 DIR=`cd "\`dirname "$0"\`" && pwd`
 
@@ -14,6 +14,8 @@ fi
 
 TOOLSJAR="$JAVA_HOME/lib/tools.jar"
 
+echo "Ivor"
+echo $JAVA_HOME
 if [ ! -f "$TOOLSJAR" ] ; then
         echo "$JAVA_HOME seems to be no JDK!" >&2
         exit 1

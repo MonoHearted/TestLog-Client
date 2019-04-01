@@ -1,0 +1,24 @@
+# Manifest syntax https://docs.python.org/2/distutils/sourcedist.html
+graft wheelhouse
+graft NGLMClient
+graft rpm
+
+exclude NGLMClient/Pipfile*
+recursive-exclude NGLMClient/__pycache__ *.pyc *.pyo *.ori
+recursive-exclude __pycache__  *.pyc *.pyo *.ori
+
+include setup.sh
+include Python-3.7.3.tar.xz
+
+exclude *.git*
+exclude *.coveragerc
+exclude proc*
+exclude pylint*
+
+include requirements*.*
+exclude requirements-dev.*
+include *.py
+
+prune .git
+prune venv
+prune test*

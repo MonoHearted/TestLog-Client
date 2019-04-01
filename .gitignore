@@ -1,4 +1,8 @@
-logs/*
-.idea/*
+NGLMClient/logs/*
+NGLMClient/.idea/*
+Python-*.tar.xz
+wheelhouse/*
+dist/*
+*.egg-info
 *.pyc
 *.sqlite3

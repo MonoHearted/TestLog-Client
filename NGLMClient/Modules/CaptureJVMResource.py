@@ -50,7 +50,7 @@ class CaptureJVMResource(object):
         startTime = time.time()
         HeapPattern = re.compile(
             r'\s+CPU:.*GC:\s+([0-9]+\.[0-9][0-9])%\s+'
-            r'HEAP:\s*(\d+)m\s+\/\d+m NONHEAP:.*$'
+            r'HEAP:\s*(\d+)m\s+\/\d+m NONHEAP:\s*(\d*)m?\s+\/\d+m.*$'
         )
         try:
             logger.info("Start Jvmtop @ %d" % startTime)
@@ -62,10 +62,19 @@ class CaptureJVMResource(object):
                 # logger.debug(output)
                 HeapMatched = HeapPattern.match(output)
                 if (HeapMatched is not None):
-                    retDict = {
-                        "GC FREE PERCENTAGE": float(HeapMatched.group(1)),
-                        "HEAP SIZE IN BYTES": int(HeapMatched.group(2))
-                    }
+                    try:
+                        int(HeapMatched.group(3))
+                    except ValueError:
+                        retDict = {
+                            "GC FREE PERCENTAGE": float(HeapMatched.group(1)),
+                            "HEAP SIZE IN BYTES": int(HeapMatched.group(2))
+                        }
+                    else:
+                        retDict = {
+                            "GC FREE PERCENTAGE": float(HeapMatched.group(1)),
+                            "HEAP SIZE IN BYTES": int(HeapMatched.group(2)),
+                            "NONHEAP SIZE IN BYTES": int(HeapMatched.group(3))
+                        }
                     logger.debug(retDict)
                     yield retDict
                 output = sp.stdout.readline().decode('ascii').rstrip()

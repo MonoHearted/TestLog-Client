@@ -18,6 +18,10 @@ from Modules.ConfigParser import cfgParser
 
 
 def parse_arguments():
+    """
+    Parses the command line arguments.
+    :return: Populated namespace containing the arg attributes.
+    """
     parser = argparse.ArgumentParser(description='Capture Resource Usage')
 
     parser.add_argument("-c", "--config", dest="configFile", type=str,
@@ -50,6 +54,11 @@ def parse_arguments():
 
 
 def logMain(params=None):
+    """
+    Begins the actual logging task. If an error occurs during execution, sends
+    the error to server (if under server-mode) or re-raises in standalone mode.
+    :return: None.
+    """
     try:
         args = parse_arguments()
 
@@ -105,16 +114,18 @@ def registerClient(address, hostingPort):
     hostName = socket.gethostname()
     hostIPv4 = config.get('proc_info', 'self_address', fallback='')
     selfUUID = config.get('grpc', 'node_uuid', fallback='')
+    alias = config.get('grpc', 'alias', fallback='')
 
     if not hostIPv4:
         raise configparser.NoOptionError('self_address', 'proc_info')
 
     if selfUUID is not None:
         clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4,
-                                         port=hostingPort, uuid=selfUUID)
+                                         port=hostingPort, uuid=selfUUID,
+                                         alias=alias)
     else:
         clientInfo = nglm_pb2.clientInfo(hostname=hostName, ipv4=hostIPv4,
-                                         port=hostingPort)
+                                         port=hostingPort, alias=alias)
 
     try:
         response = stub.register(clientInfo)

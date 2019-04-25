@@ -4,7 +4,9 @@ NGLogman Clientside
 
 This program can be run in either standalone mode or in listening mode for use together with the NGLogman Serverside.
 
-Before first execution, run setup.sh to install Python 3 and the required dependencies.
+Before first execution, run setup.sh to install Python 3 and the required dependencies. If Python 3 is
+already installed, you can comment out the third block in setup.sh starting with ``tar vxf Python-3.7.3.tar.xz``
+up to ``ln -s /usr/local/bin/python3.7 /usr/local/bin/python3``.
 
 Packaging for Distribution
 ---------------------------
